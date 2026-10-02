@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Docker
 
 on:
   push:
@@ -17,20 +17,20 @@ jobs:
         working-directory: frontend
 
     steps:
-      - name: Checkout repository
+      - name: Récupérer le code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Installer Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Installer les dépendances
         run: npm ci
 
-      - name: Build frontend
+      - name: Construire le frontend
         run: npm run build
 
 
@@ -42,18 +42,49 @@ jobs:
         working-directory: backend
 
     steps:
-      - name: Checkout repository
+      - name: Récupérer le code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Installer Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      - name: Install dependencies
+      - name: Installer les dépendances
         run: npm ci
 
-      - name: Check backend
+      - name: Vérifier le backend
         run: node --check server.js
+
+
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Se connecter à Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Construire l'image Backend
+        run: |
+          docker build \
+            -t nourki2003/maison-lunora-backend:latest \
+            ./backend
+
+      - name: Construire l'image Frontend
+        run: |
+          docker build \
+            -t nourki2003/maison-lunora-frontend:latest \
+            ./frontend
+
+      - name: Envoyer les images vers Docker Hub
+        run: |
+          docker push nourki2003/maison-lunora-backend:latest
+          docker push nourki2003/maison-lunora-frontend:latest
